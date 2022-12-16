@@ -6,7 +6,7 @@
 /*   By: smia <smia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/12/10 04:26:59 by smia              #+#    #+#             */
-/*   Updated: 2022/12/11 19:07:56 by smia             ###   ########.fr       */
+/*   Updated: 2022/12/16 23:35:45 by smia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,8 @@ class node
         node*   _right;
         node*   _left;
         node*   _parent;
-        int     balance_factor;  // (Height of Left Subtree - Height of Right Subtree) or (Height of Right Subtree - Height of Left Subtree) , The value of balance factor should always be -1, 0 or +1.
-        node(int data, node* parent, node* right, node* left, int balance) : _data(data), _parent(parent), _right(right), _left(left), balance_factor(balance)
+        int     _balance_factor;  // (Height of Left Subtree - Height of Right Subtree) or (Height of Right Subtree - Height of Left Subtree) , The value of balance factor should always be -1, 0 or +1.
+        node(int data, node* parent, node* right, node* left, int balance) : _data(data), _parent(parent), _right(right), _left(left), _balance_factor(balance)
         {
         }
         
@@ -31,83 +31,31 @@ class AvlTree
 {
 private:
         node*   _root;
-        node*   _NIL;
         int     _size;
 public:
     AvlTree() : _size(0)
     {
-        _NIL = new node(0, NULL, NULL, NULL, 0);
-        _root = _NIL;
+        _root = NULL;
     }
     node* get_root(void) const { return (this->_root); }
-    node* get_size(void) const { return (this->_size);}
-    
+    int get_size(void) const { return (this->_size);}
+
     int Balance_factor(node* Node)
     {
-            // if(Node->_left && Node->_right)
-            // {
-            //     if (Node->_left->balance_factor < Node->_right->balance_factor)
-            //         return Node->_right->balance_factor + 1;
-            //     else 
-            //         return  Node->_left->balance_factor + 1;
-            // }
-            // else if(Node->_left && Node->_right ==  _NIL)
-            // {
-            //     return Node->_left->balance_factor + 1;
-            // }
-            // else if(Node->_left == _NIL && Node->_right)
-            // {
-            //     return Node->_right->balance_factor + 1;
-            // }
-            // return 0;
-        //
-        int left_height = 0;
-        int right_height = 0;
-        node* tmp = Node;
-        
-        if (tmp == _NIL)
-            return 0;
-        while(tmp != _NIL && tmp->_left != _NIL)
-        {
-            tmp = tmp->_left;
-            left_height++;
-        }
-        tmp = Node;
-        while(tmp != _NIL && tmp->_right != _NIL)
-        {
-            tmp = tmp->_right;
-            right_height++;
-        }
-        // std::cout << (right_height - left_height) << std::endl;
-        return (right_height - left_height);
+        return 1;
     }
     
     int is_leftchild(node* Node)
     {
-        if (Node == _NIL || Node == _root)
-            return 0;
+        if (Node == _root)
+            return 3;
         if (Node->_data < Node->_parent->_data) // is left child
             return 1; 
         if (Node->_data > Node->_parent->_data) // is right child;
             return 2;
+        return 0;
     }
 
-    // node* find_error(node* root)
-    // {
-    //     if (root != _NIL)
-    //     {
-    //         root->balance_factor = Balance_factor(root);
-    //         // std::cout << root->_data << " factor: "<< root->balance_factor<<  std::endl;
-    //         if (root->balance_factor != 0 && root->balance_factor != 1 && root->balance_factor != -1)
-    //             return root;
-    //     }
-    //     if (root->_right != _NIL)
-    //         return find_error(root->_right);
-    //     if (root->_left != _NIL)
-    //         return find_error(root->_left);
-    //     return _NIL;
-    // }
-    
     int max(int a, int b)
     {
         if (a > b)
@@ -115,69 +63,82 @@ public:
         return a;
     }
 
-    void left_rotate(node* Node)
-    {
-            
-        // node* right = Node->_right;  
-        // node* tmp = right->_left;  
-        // // Perform rotation
-        // right->_right = Node;    
-        // Node->_left = tmp;
-        // //
-        // if (Node == _root)
-        //      _root = Node->_right;
-        // // update balance factor
-        // Node->balance_factor = max(Balance_factor(Node->_left),Balance_factor(Node->_right)) + 1;
-        // right->balance_factor = max(Balance_factor(right->_left),Balance_factor(right->_right)) + 1;
-    }
 
-    void right_rotate(node* Node)
-    {
-        // node* left = Node->_left;
-        // node* tmp = left->_right;  
-        // // Perform rotation  
-        // left->_right = Node;    
-        // Node->_left = tmp;
-        
-        // //
-        // if (Node == _root)
-        //      _root = Node->_left;
-        // // update balance factor
-
-        // Node->balance_factor = max(Balance_factor(Node->_left),Balance_factor(Node->_right)) + 1;
-        // left->balance_factor = max(Balance_factor(left->_left),Balance_factor(left->_right)) + 1;
-    }
 
     void fix_insert(node* Node)
     {
-            if (Node == _NIL) // if nil
+        while(Node != NULL)
+        {
+            if (Node->_balance_factor < -1)
             {
-                return ;
+
+                left_rotation(Node);
             }
-            if (Balance_factor(Node) > 1 || Balance_factor(Node) < -1) // if Node unbalanced 
+            if (Node->_balance_factor > 1)
             {
-                // fix_violation
-                
-                
+
+                right_rotation(Node);
             }
-            fix_insert(Node->_parent);
+            Node = Node->_parent;
+        }
+    }
+
+    void left_rotation(node* Node)
+    {
+        node* tmp = Node->_right->_left;
+        node* ptr = Node->_right;
+        node* hold = Node->_parent;
+        if (Node == _root)
+            _root = ptr;
+
+        Node->_parent = ptr;
+        ptr->_parent = hold;
+        Node->_right = tmp;
+        ptr->_left = Node;
+        
+        
+    }
+
+    void right_rotation(node* Node)
+    {
+        node* tmp = Node->_left->_right;
+        node* ptr = Node->_left;
+        node* hold = Node->_parent;
+        if (Node == _root)
+            _root = ptr;
+
+        Node->_parent = ptr;
+        ptr->_parent = hold;
+        Node->_left = tmp;
+        ptr->_right = Node;
+        
+    }
+
+    void update_balance_factor(node* Node)
+    {
+        node* ptr = Node;
+        while(ptr != NULL)
+        {
+            if (is_leftchild(ptr) == 1)
+                ptr->_parent->_balance_factor++;
+            else if (is_leftchild(ptr) == 2)
+                ptr->_parent->_balance_factor--;
+            ptr = ptr->_parent;
+        }
     }
 
     void insert_node(int data)
     {
-        node* Node = new node(data, _NIL, _NIL, _NIL, 0); // creat new Node
-        // find good position in tree to insert new Node
-        if (_root == _NIL)
+        node* Node = new node(data, NULL, NULL, NULL, 0); // creat new Node
+        
+        node* ptr = _root; // ptr start with root and go till we find position that we will insert new Node in
+        node* hold = NULL; // hold parent of pos (node that we will insert in)
+        while( ptr != NULL)
         {
-            _root = Node;
-            return ;
-        }
-        node* ptr = _root;
-        while (ptr != _NIL)
-        {
-            if (data > ptr->_data)
+            hold = ptr;
+            if (Node->_data > ptr->_data)
                 ptr = ptr->_right;
-            else if (data < ptr->_data)
+            else if (Node->_data < ptr->_data)
                 ptr = ptr->_left;
             else
             {
@@ -185,34 +146,39 @@ public:
                 return ;
             }
         }
-        // insert Node
-        ptr->_parent = Node;
-        if (is_leftchild(Node) == 1)
-            ptr->_parent->_left = Node;
+        Node->_parent = hold; // new Node with his parent;
+        if (hold == NULL) 
+        {
+            _root = Node;
+            return ;
+        }
+        else if (Node->_data > hold->_data)
+            hold->_right = Node;
         else
-            ptr->_parent->_right = Node;
-        // check if there is a violation in tree
-        fix_insert(Node->_parent);
+            hold->_left = Node;
+        update_balance_factor(Node);
+        // check if there is a violation in tree and fix it
+        fix_insert(Node);
     }
 
     void print_tree(node* root)
     {
 
-            if (root == _NIL)
+            if (root == NULL)
             {
                 std::cout << "tree is empty \n";
                 return ;
             }
-            if (root != _NIL)
+            if (root != NULL)
             {
                 if (root == this->_root)
-                    std::cout << root->_data << " this is root\n";
+                    std::cout << root->_data << " Balance factor: " << root->_balance_factor << " this is root\n";
                 else
-                    std::cout << root->_data  << std::endl;
+                    std::cout << root->_data  << " Balance factor: " << root->_balance_factor << std::endl;
             }
-            if (root->_left != _NIL)
+            if (root->_left != NULL)
                 print_tree(root->_left);
-            if (root->_right != _NIL)
+            if (root->_right != NULL)
                 print_tree(root->_right);
     }
 };
