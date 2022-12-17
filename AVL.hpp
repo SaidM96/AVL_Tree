@@ -6,7 +6,7 @@
 /*   By: smia <smia@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/12/10 04:26:59 by smia              #+#    #+#             */
-/*   Updated: 2022/12/17 03:12:23 by smia             ###   ########.fr       */
+/*   Updated: 2022/12/17 05:33:58 by smia             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,15 @@ public:
             return 0;
         return Node->_balance_factor;
     }
-
+    node* get_sibling(node* Node)
+    {
+        if (Node->_parent == NULL)
+            return NULL;
+        if (Node->_data > Node->_parent->_data)
+            return Node->_parent->_left;
+        else
+            return Node->_parent->_right;
+    }
     int is_leftchild(node* Node)
     {
         if (Node == _root)
@@ -79,7 +87,61 @@ public:
         Node->_right = tmp;
         ptr->_left = Node;
 
+        ptr->_balance_factor = max(get_Balance_factor(ptr->_right), get_Balance_factor(ptr->_left));
         Node->_balance_factor = max(get_Balance_factor(Node->_right), get_Balance_factor(Node->_left));
+    }
+
+    void LR_rotation(node* Node)
+    {
+        node* ptr = Node->_left->_right;
+        node* tmp = Node->_left;
+        node* hold = Node->_parent;
+        if (Node == _root)
+        {
+            _root = ptr;
+        }
+        Node->_parent = ptr;
+        tmp->_parent = ptr;
+
+        ptr->_left = Node->_left;
+        Node->_left = NULL;
+        ptr->_right = Node;
+
+        ptr->_parent = hold;
+
+        tmp->_left = NULL;
+        tmp->_right = NULL;
+
+        Node->_balance_factor = max(get_Balance_factor(Node->_right), get_Balance_factor(Node->_left));
+        tmp->_balance_factor = max(get_Balance_factor(tmp->_right), get_Balance_factor(tmp->_left));
+        ptr->_balance_factor = max(get_Balance_factor(ptr->_right), get_Balance_factor(ptr->_left));
+        
+    }
+
+    void RL_rotation(node* Node)
+    {
+        node* ptr = Node->_right->_left;
+        node* tmp = Node->_right;
+        node* hold = Node->_parent;
+        if (Node == _root)
+        {
+            _root = ptr;
+        }
+        Node->_parent = ptr;
+        tmp->_parent = ptr;
+
+        ptr->_right = Node->_right;
+        Node->_right = NULL;
+        ptr->_left = Node;
+
+        ptr->_parent = hold;
+        
+        
+        tmp->_left = NULL;
+        tmp->_right = NULL;
+        
+        Node->_balance_factor = max(get_Balance_factor(Node->_right), get_Balance_factor(Node->_left));
+        tmp->_balance_factor = max(get_Balance_factor(tmp->_right), get_Balance_factor(tmp->_left));
         ptr->_balance_factor = max(get_Balance_factor(ptr->_right), get_Balance_factor(ptr->_left));
     }
     
@@ -92,6 +154,7 @@ public:
     
     void right_rotation(node* Node)
     {
+        puts("woow");\
         node* tmp = Node->_left->_right;
         node* ptr = Node->_left;
         node* hold = Node->_parent;
@@ -110,26 +173,30 @@ public:
         ptr->_right = Node;
             
         
-        Node->_balance_factor = max(get_Balance_factor(Node->_right), get_Balance_factor(Node->_left));
         ptr->_balance_factor = max(get_Balance_factor(ptr->_right), get_Balance_factor(ptr->_left));
+        Node->_balance_factor = max(get_Balance_factor(Node->_right), get_Balance_factor(Node->_left));
     }
 
-    void fix_insert(node* Node)
+    void fix_insert(node* Node, int key)
     {
         node* ptr = Node;
         while(ptr != NULL)
         {
             if (ptr->_balance_factor < -1)
             {
-               left_rotation(ptr);
+                if (key > ptr->_right->_data)
+                    left_rotation(ptr);
+                else if (key < ptr->_right->_data)
+                    RL_rotation(ptr);
                update_balance_rotation(ptr);
-               break ;
             }
             else if (ptr->_balance_factor > 1)
             {
-                right_rotation(ptr);
+                if (key < ptr->_left->_data) // key is left child;
+                    right_rotation(ptr);
+                else if (key > ptr->_left->_data) // key is a right child
+                    LR_rotation(ptr);
                 update_balance_rotation(ptr);
-                break;
             }
             ptr = ptr->_parent;
         }
@@ -156,12 +223,20 @@ public:
                 Node = ptr->_parent;
             }
         }
-        
     }
+    
     void update_balance_factor(node* Node)
     {
         node* ptr = Node;
-        while(ptr != NULL)
+        if (get_sibling(ptr) != NULL)
+        {
+            if (is_leftchild(ptr) == 1)
+                ptr->_parent->_balance_factor++;
+            else if (is_leftchild(ptr) == 2)
+                ptr->_parent->_balance_factor--;
+            return ;
+        }
+        while(ptr != _root)
         {
             if (is_leftchild(ptr) == 1)
                 ptr->_parent->_balance_factor++;
@@ -202,8 +277,7 @@ public:
             hold->_left = Node;
         update_balance_factor(Node);
         // check if there is a violation in tree and fix it
-
-        fix_insert(Node);
+        fix_insert(Node, data);
     }
 
     void print_tree(node* root)
