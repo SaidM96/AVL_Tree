@@ -26,8 +26,8 @@ int main()
     tree.insert(81);
         // tree.PrintTree();
 
-    cout << "delete 9 \n";
-    tree.Delete(9);
+    cout << "delete all \n";
+    tree.clear();
     tree.PrintTree();
     // cout << "delete 27 \n";
     // tree.Delete(27);

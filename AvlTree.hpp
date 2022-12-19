@@ -30,11 +30,12 @@ class AvlTree
         {
             node* hold = (Node)->_parent;
             node* ptr = (Node)->_right;
+            node* tmp = ptr->_left;
 
 
             Node->_parent = ptr;
             ptr->_left = Node;
-            Node->_right = NULL;
+            Node->_right = tmp;
             ptr->_parent = hold;
             if (Node != _root)
             {
@@ -56,10 +57,11 @@ class AvlTree
         {
             node* hold = Node->_parent;
             node* ptr = Node->_left;
+            node* tmp = ptr->_right;
 
             Node->_parent = ptr;
             ptr->_right = Node;
-            Node->_left = NULL;
+            Node->_left = tmp;
             ptr->_parent = hold;
             if (Node != _root)
             {
@@ -163,7 +165,33 @@ class AvlTree
                 return HelperSearch(root->_left, value);
             return root;
         }
-
+        void rebalance_delete(node* Node)
+        {
+            if (Node->_balance > 1)
+            {
+                if (Node->_left->_balance >= 0)
+                {
+                    RightRotate(Node);
+                }
+                else
+                {
+                    LeftRotate(Node->_left);
+                    RightRotate(Node);
+                }
+            }
+            if (Node->_balance < -1)
+            {
+                if (Node->_right->_balance <= 0)
+                {
+                    LeftRotate(Node);
+                }
+                else
+                {
+                    RightRotate(Node->_right);
+                    LeftRotate(Node->_left);
+                }               
+            }
+        }
         void HelperDelete(node** root, int value)
         {
             if ((*root) == NULL)
@@ -185,7 +213,7 @@ class AvlTree
                     int hold_value = ptr->_value;
                     ptr->_value = (*root)->_value;
                     (*root)->_value = hold_value;
-                    HelperDelete(&(*root)->_right, value);
+                    HelperDelete(&((*root)->_right), value);
                 }
                 else // one child
                 {
@@ -195,16 +223,18 @@ class AvlTree
                         ptr = (*root)->_left;
                     else
                         ptr = (*root)->_right;
-                    if (IsChild((*root)) == 1)
-                        hold->_left = ptr;
-                    else if (IsChild((*root)) == 2)
-                        hold->_right = ptr;
                     ptr->_parent = hold;
-                    delete (*root);
-                    // cout << hold->_left->_value << endl;
+                    *(*root) = *ptr;
+                    delete (ptr);
                 }
             }
-
+            if ((*root) == NULL)
+                return ;
+            // update height factor 
+            (*root)->_height = max(GetHeight((*root)->_left), GetHeight((*root)->_right)) + 1;      
+            (*root)->_balance = GetBalance((*root));
+            // rebalance
+            rebalance_delete(*root);
         }
 
     public:
@@ -271,5 +301,12 @@ class AvlTree
         void PrintTree(void)
         {
             HelperPrint(_root);
+        }
+        void clear(void)
+        {
+            while(_root != NULL)
+            {
+                Delete(_root->_value);
+            }
         }
 };
